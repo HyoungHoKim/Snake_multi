@@ -1,7 +1,8 @@
-#ifndef SNAKEGAMESHARED_HPP
-#define SNAKEGAMESHARED_HPP
+#ifndef SNAKECLIENTSHARED_HPP
+#define SNAKECLIENTSHARED_HPP
 
 # include <bits/stdc++.h>
+# include <unistd.h>
 # include <vector>
 # include <iostream>
 # include <string>
@@ -9,9 +10,13 @@
 # include <fstream>
 # include <regex>
 
-# include "Server.hpp"
-# include "Game.hpp"
-# include "Snake.hpp"
+using namespace std;
+
+struct food
+{
+	int x, y;
+	char foodChar;
+};
 
 # define RED 7
 # define GREEN 2
@@ -25,23 +30,9 @@
 # define coloron(a) attron(COLOR_PAIR(a))
 # define coloroff(a) attroff(COLOR_PAIR(a))
 
-using namespace std;
-
-class snake;
-class Game;
-
-int g_max_x = 0, g_max_y = 0;
-ofstream logfile;
-
-std::ostringstream ss;
-
-struct food
-{
-	int x, y;
-	char foodChar;
-};
-
-Game GameObj(1);
-
+# include "Client.hpp"
+# include "Game.hpp"
+# include "Snake.hpp"
+# include "Utils.hpp"
 
 #endif

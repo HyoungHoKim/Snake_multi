@@ -1,9 +1,15 @@
-#include "Snake.hpp"
+#include "SnakeGameShared.hpp"
+
+extern int g_max_x;
+extern int g_max_y;
+extern ofstream logfile;
+
+extern Game GameObj;
 
 Snake::Snake(char keyUp, char keyDown, char keyRight, char keyLeft,
-		  int id, int sockFD = -1,
-		  string playerName = "Name", string playerSight = "s") :
-	mKeyUp(keyUp), mKeyDown(keyDown), mKeyRight(keyRight), mKeyLeft(keyRight),
+		  int id, int sockFD,
+		  string playerName, string playerSight) :
+	mKeyUp(keyUp), mKeyDown(keyDown), mKeyRight(keyRight), mKeyLeft(keyLeft),
 	mID(id), mSockFD(sockFD), 
 	mPlayerSight(playerSight)
 {
@@ -11,7 +17,7 @@ Snake::Snake(char keyUp, char keyDown, char keyRight, char keyLeft,
 	mSnakeDirection = "right";
 	mID = id;
 	mSockFD = sockFD;
-	mPlayerName = name + std::to_string(-1 * id);
+	mPlayerName = playerName + std::to_string(-1 * id);
 	mBodyColor = rand() % 5 + 1;
 	logfile << "\n\nbody color : " << mBodyColor << endl << endl;
 }
@@ -28,11 +34,11 @@ void Snake::DrawSnake(void)
 
 void Snake::AddPart(int x, int y, string dir)
 {
-	snake_part obj(x, y);
+	Snake_part obj(x, y);
 	if (dir == "right")
-		parts.push_back(obj);
+		mParts.push_back(obj);
 	else if (dir == "left")
-		parts.insert(parts.begin(), obj);
+		mParts.insert(mParts.begin(), obj);
 }
 
 void Snake::InitSnakeOnScreen()
@@ -51,22 +57,22 @@ void Snake::MoveSnake(string dir)
 
 	if (dir == "right")
 	{
-		AddPart((last_part.x + 1) % max_x, last_part.y);
+		AddPart((last_part.x + 1) % g_max_x, last_part.y);
 		mSnakeDirection = "right";
 	}
 	else if (dir == "left")
 	{
-		AddPart((last_part.x - 1) < 0 ? max_x - 1 : (last_part.x - 1), last_part.y);
+		AddPart((last_part.x - 1) < 0 ? g_max_x - 1 : (last_part.x - 1), last_part.y);
 		mSnakeDirection = "left";
 	}
 	else if (dir == "up")
 	{
-		AddPart((last_part.x, (last_part.y - 1) < 0 ? max_y - 1 : (last_part.y - 1)));
+		AddPart(last_part.x, (last_part.y - 1) < 0 ? g_max_y - 1 : (last_part.y - 1));
 		mSnakeDirection = "up";
 	}
 	else if (dir == "down")
 	{
-		AddPart(last_part.x, (last_part.y + 1) % max_y);
+		AddPart(last_part.x, (last_part.y + 1) % g_max_y);
 		mSnakeDirection = "down";
 	}
 
@@ -78,7 +84,7 @@ void Snake::MoveSnake(string dir)
 		{
 			AddPart(GameObj.getFoodX(), GameObj.getFoodY());
 			setScore(getScore() + 1);
-			GameObj.printFood("new");
+			GameObj.PrintFood("new");
 		}
 	}
 	DrawSnake();
@@ -90,18 +96,18 @@ void Snake::CheckSnakeOverlap()
 	int headX = getHeadX(), headY = getHeadY();
 	for (int i = 0; i < mParts.size() - 1; i++)
 	{
-		if (mParts[i].x == headX && parts[i].y == headY)
+		if (mParts[i].x == headX && mParts[i].y == headY)
 		{
 			if (mSockFD > 0 && mPlayerSight == "c")
 				return ;
 			if (mPlayerSight == "s")
-				GameObj.server.sendData(mSockFD, "$" + std::to_string(mScore) + "$");
-			gameOverHandler();
+				GameObj.mServer.SendData(mSockFD, "$" + std::to_string(mScore) + "$");
+			GameOverHandler();
 		}
 	}
 }
 
-void Snake::handleMovementKeyPress(char ch)
+void Snake::HandleMovementKeyPress(char ch)
 {
 	if (mKeyUp == ch)
 	{
@@ -121,7 +127,7 @@ void Snake::handleMovementKeyPress(char ch)
 	else if (mKeyLeft == ch)
 	{
 		if (getDirection() != "right")
-			MoveSnake("left");
+		MoveSnake("left");
 	}
 	else
 		return ;
@@ -130,33 +136,33 @@ void Snake::handleMovementKeyPress(char ch)
 void Snake::GameOverHandler()
 {
 	clear();
-	GameObj.initConsoleScreen("off");
+	GameObj.InitConsoleScreen("off");
 	system("clear");
 	string game_over_message = "\n\n\nGAME OVER FOR " + mPlayerName + " :(\n\n";
 	game_over_message += "Score : " + std::to_string(mScore) + "\nBetter Luck Next time :)\n\n";
 
-	GameObj.printAnimated(game_over_message);
+	GameObj.PrintAnimated(game_over_message);
 
 	if (mSockFD > 0)
 	{
 		GameObj.allSnakes.erase(GameObj.allSnakes.begin() + GameObj.getSnakeIndexFromDescriptor(mSockFD));
-		GameObj.server.closeSocket(mSockFD);
+		GameObj.mServer.CloseSocket(mSockFD);
 	}
 	else
 	{
-		GameObj.allSnakes.erase(GameObj.allSnakes.begin()+GameObj.getSnakeIndexFromID(id)); 
+		GameObj.allSnakes.erase(GameObj.allSnakes.begin() + GameObj.getSnakeIndexFromID(mID)); 
 	}
 
 	GameObj.setNoOfPlayers(GameObj.getNoOfPlayers() - 1);
 
 	if(GameObj.getNoOfPlayers() == 0)
     {
-        GameObj.initConsoleScreen("off"); 
+        GameObj.InitConsoleScreen("off"); 
         cout << "\nNo Snakes Left to Play :(  Exiting Game ..." << endl << endl; 
         sleep(2);
         exit(3); 
     }
 
-    GameObj.printAnimated("\n\nGame will continue in few seconds." ); 
+    GameObj.PrintAnimated("\n\nGame will continue in few seconds." ); 
     sleep(3);
 }
