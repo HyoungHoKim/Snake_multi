@@ -39,6 +39,14 @@ using std::unordered_set;
 
 class GameObject;
 
+enum Dir
+{
+	LEFT,
+	RIGHT,
+	UP,
+	DOWN
+};
+
 #include "DefaultMath.hpp"
 
 #include "StringUtils.hpp"
@@ -49,6 +57,8 @@ class GameObject;
 #include "SocketUtil.hpp"
 
 #include "MemoryBitStream.hpp"
+
+#include "InputState.hpp"
 
 #include "GameObject.hpp"
 
